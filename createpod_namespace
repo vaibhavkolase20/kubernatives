@@ -1,4 +1,21 @@
+1) # this code is make namespace not pod
 kind: Namespace
 apiVersion: v1
 metadata:
   name: nginx
+
+2) # this code is make pod in to above created namespace
+kind: Pod
+apiVersion: v1
+metadata:
+  name: nginx-pod
+  namespace: nginx
+spec:
+  containers:
+    - name: nginx
+      image: nginx:latest
+      ports:
+      - containerPort: 80
+
+4) how to take acess to this pode there is one one command
+ kubectl exec -it nginx-pod -n nginx -- bash
