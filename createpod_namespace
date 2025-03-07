@@ -19,3 +19,9 @@ spec:
 
 4) how to take acess to this pode there is one one command
  kubectl exec -it nginx-pod -n nginx -- bash
+
+5) how to check your ngnx is work or not
+curl 127.0.0.1
+
+6) how to debugging into the pod
+kubectl describe pod/nginx-pod -n nginx
