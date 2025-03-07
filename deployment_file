@@ -23,3 +23,8 @@ spec:
           image: nginx:latest   # हा कंटेनर 'nginx:latest' इमेज वापरेल.
           ports:  
             - containerPort: 80   # कंटेनर 80 नंबर पोर्टवर ट्रॅफिक स्वीकारेल.
+
+
+
+# this command use to scaleup the pod maniualy
+kubectl scale deployment/nginx-deployment -n nginx --replicas=5
