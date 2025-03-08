@@ -1,3 +1,15 @@
+# hoe to create a pod 
+kubectl run nginx --image=nginx
+# how to dlete pod
+ kubectl delete pod nginx
+# create pod to specific name space
+kubectl run nginx --image=nginx -n nginx
+# how to show pod
+kubectl get pods -n nginx
+#to check information about pod
+kubectl describe pod/nginx-pod -n nginx
+
+
 1) # this code is make namespace not pod
 kind: Namespace
 apiVersion: v1
