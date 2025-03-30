@@ -1,4 +1,4 @@
-# hoe to create a pod 
+# how to create a pod 
 kubectl run nginx --image=nginx
 # how to dlete pod
  kubectl delete pod nginx
