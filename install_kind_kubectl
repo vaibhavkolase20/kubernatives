@@ -1,0 +1,43 @@
+
+# How to install kind and kubectl
+===================================
+
+
+#!/bin/bash
+
+echo "🔵 System Update सुरू..."
+sudo apt update -y
+sudo apt upgrade -y
+
+echo "🔵 Docker Install करत आहे..."
+sudo apt install docker.io -y
+sudo systemctl enable docker
+sudo systemctl start docker
+sudo usermod -aG docker $USER
+
+echo "🔵 kubectl डाउनलोड करत आहे..."
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+echo "🔵 KIND डाउनलोड करत आहे..."
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/latest/kind-linux-amd64
+chmod +x kind
+sudo mv kind /usr/local/bin/
+
+echo "🔵 सर्व installation पूर्ण!"
+
+echo "➡️ kubectl version:"
+kubectl version --client
+
+echo "➡️ kind version:"
+kind --version
+
+echo "🔵 Kubernetes cluster तयार करत आहे..."
+kind create cluster
+
+echo "➡️ Cluster Nodes:"
+kubectl get nodes
+
+echo "🎉 Installation + Cluster Ready!"
+echo "⚠️ Docker साठी logout/login आवश्यक असेल (जर sudo शिवाय चालत नसेल तर)."
