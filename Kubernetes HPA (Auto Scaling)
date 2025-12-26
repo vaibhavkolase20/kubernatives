@@ -1,0 +1,189 @@
+📘 Kubernetes HPA (Auto Scaling) – Complete Practical Documentation (Marathi)
+🎯 Objective
+
+Traffic वाढला की nginx pods automatically scale-up होतील
+Traffic कमी झाला की pods auto scale-down होतील
+हे सगळं HPA (Horizontal Pod Autoscaler) वापरून.
+
+🧱 Environment Details (तुझं actual setup)
+
+Kubernetes Version: v1.34.3
+
+Nodes:
+
+controlplane
+
+node01
+
+Container Runtime: containerd
+
+OS: Ubuntu 24.04
+
+CNI: Calico
+
+Namespace: default
+
+🔹 STEP 1: NGINX Deployment तयार करणे
+Command
+kubectl create deployment nginx-deployment --image=nginx
+
+Verify
+kubectl get deployment
+kubectl get pods -o wide
+
+Output (Expected)
+nginx-deployment   1/1   Running
+
+
+✅ NGINX pod successfully running
+
+🔹 STEP 2: NGINX साठी Service तयार करणे
+ClusterIP Service
+kubectl expose deployment nginx-deployment \
+--name=nginx-service \
+--port=80 \
+--target-port=80 \
+--type=ClusterIP
+
+Verify
+kubectl get svc
+
+🔹 STEP 3: Metrics Server Install करणे (HPA साठी MUST)
+Command
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+Verify
+kubectl get pods -n kube-system | grep metrics
+
+
+❌ Problem (Live Error):
+
+metrics-server   0/1   Running
+
+🔧 STEP 3.1: Metrics Server Error Fix (Important)
+Reason
+
+Kubelet TLS issue → metrics collect होत नव्हते
+
+Solution
+kubectl edit deployment metrics-server -n kube-system
+
+args मध्ये add केले:
+- --kubelet-insecure-tls
+
+Final args section
+- --cert-dir=/tmp
+- --secure-port=10250
+- --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+- --kubelet-use-node-status-port
+- --metric-resolution=15s
+- --kubelet-insecure-tls
+
+Verify
+kubectl get pods -n kube-system | grep metrics
+
+
+✅ 1/1 Running
+
+🔹 STEP 4: Load Generator Pod तयार करणे (Traffic साठी)
+kubectl run load-generator --image=busybox --restart=Never -- /bin/sh -c "sleep 3600"
+
+
+Verify:
+
+kubectl get pods
+
+🔹 STEP 5: HPA Create करणे
+kubectl autoscale deployment nginx-deployment \
+--cpu-percent=50 \
+--min=1 \
+--max=5
+
+Verify
+kubectl get hpa
+
+
+Output:
+
+cpu: 0%/50%
+replicas: 1
+
+🔴 LIVE ISSUE: Pods scale होत नव्हते
+Observation
+CPU: 33–40%
+TARGET: 50%
+REPLICAS: 2
+
+❌ Root Cause
+
+NGINX deployment मध्ये CPU request / limit defined नव्हते
+
+👉 HPA formula:
+
+CPU Utilization = Used CPU / Requested CPU
+
+🔧 STEP 6: Deployment मध्ये CPU Request & Limit Add करणे
+Command
+kubectl edit deployment nginx-deployment
+
+Add this inside container section
+resources:
+  requests:
+    cpu: "100m"
+  limits:
+    cpu: "200m"
+
+Full Example
+containers:
+- name: nginx
+  image: nginx
+  ports:
+  - containerPort: 80
+  resources:
+    requests:
+      cpu: "100m"
+    limits:
+      cpu: "200m"
+
+
+📌 Save & Exit
+
+🔹 STEP 7: Traffic Generate करणे (Scale UP पाहण्यासाठी)
+load-generator मध्ये login
+kubectl exec -it load-generator -- /bin/sh
+
+Inside pod
+while true; do wget -q -O- http://nginx-service; done
+
+
+(2–3 terminals मध्ये हे command चालवलं तर CPU जास्त वाढतो)
+
+🔹 STEP 8: HPA Live Observe करणे
+kubectl get hpa -w
+
+Expected Output
+cpu: 55%/50%   replicas: 3
+cpu: 70%/50%   replicas: 4
+cpu: 85%/50%   replicas: 5
+
+Verify Pods
+kubectl get pods
+
+
+✅ Multiple nginx pods Running
+
+🔹 STEP 9: Auto Scale DOWN Test
+Traffic थांबव
+CTRL + C
+exit
+
+Observe
+kubectl get hpa -w
+
+
+⏳ 2–5 minutes नंतर:
+
+replicas: 5 → 4 → 3 → 2 → 1
+
+this is the link of this task
+https://chatgpt.com/share/694e5026-8de4-800f-b3c2-b22e579459cd
